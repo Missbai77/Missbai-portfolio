@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="MO-Control Spatial-01：同一座建筑，同一束光。可进入、可操作的室内外融合视觉研究。">
+<title>MO · Spatial / 01 — The Threshold</title>
+<style>
+:root{--ease:cubic-bezier(.22,1,.36,1);--ink:#eef7f0;--secondary:rgba(239,249,242,.7);--rule:rgba(238,251,242,.28);--accent:#e8efe4;--stone:#eeeae1;--stone-shadow:#b7b6af}
+*{box-sizing:border-box}
+html{min-height:100%;background:#182737}
+body{margin:0;min-height:100svh;overflow-x:clip;color:var(--ink);font:400 14px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC",sans-serif;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible{outline:2px solid currentColor;outline-offset:5px}
+button:disabled{cursor:default}
+::selection{background:#e5d1bb;color:#243f4b}
+body[data-light="dawn"]{--sky:radial-gradient(ellipse 54% 37% at 71% 56%,rgba(255,215,169,.84),transparent 79%),linear-gradient(180deg,#657c91 0%,#9dafb5 34%,#d9c5b8 56%,#c59c91 58%,#456979 62%,#1c3e4f 100%);--sea:#24495b;--reflection:rgba(255,229,188,.33);--glow:#f9d8b7;--room-light:rgba(255,227,190,.39);--room-dark:#6b7776}
+body[data-light="night"]{--sky:radial-gradient(ellipse 54% 42% at 70% 53%,rgba(52,115,141,.28),transparent 77%),linear-gradient(180deg,#07101d 0%,#152639 40%,#254b5b 56%,#193744 58%,#081925 75%,#040f19 100%);--sea:#0b2431;--reflection:rgba(148,199,207,.12);--glow:#99becb;--room-light:rgba(138,185,202,.13);--room-dark:#334b55}
+#scene{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none;background:#152634}
+.sky{position:absolute;inset:0;background:var(--sky);transition:background 1.4s ease}
+.ambient-bloom{position:absolute;inset:-15%;background:radial-gradient(ellipse 32% 25% at 68% 48%,var(--room-light),transparent 85%);mix-blend-mode:screen}
+.sun{position:absolute;width:min(36vw,470px);height:min(36vw,470px);top:35%;left:72%;transform:translate(-50%,-50%);border-radius:50%;filter:blur(2px);background:radial-gradient(circle,rgba(255,248,222,.9) 0,rgba(255,221,186,.42) 18%,rgba(255,203,162,.09) 54%,transparent 77%);opacity:.92;transition:opacity 1s}
+body[data-light="night"] .sun{opacity:.08}
+.sea{position:absolute;inset:58% 0 0;background:linear-gradient(180deg,rgba(245,224,192,.13),transparent 10%),repeating-linear-gradient(0deg,transparent 0,transparent 10px,rgba(220,246,240,.023) 11px,transparent 12px),linear-gradient(180deg,transparent,var(--sea));mask-image:linear-gradient(#000 0%,rgba(0,0,0,.96) 55%,rgba(0,0,0,.76) 100%)}
+.horizon{position:absolute;top:58%;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(241,247,230,.18) 32%,rgba(255,243,220,.72) 73%,transparent);box-shadow:0 0 17px var(--reflection)}
+#sea-canvas{position:absolute;top:58%;left:0;width:100%;height:42%;opacity:.8}
+.air{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,20,35,.23),transparent 37%,transparent 79%,rgba(5,19,25,.33))}
+.noise{position:absolute;inset:0;opacity:.15;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.77' numOctaves='3' stitchTiles='stitch' seed='9'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='.17'/%3E%3C/svg%3E")}
+.architecture{position:fixed;inset:0;z-index:1;pointer-events:none;overflow:hidden;transition:opacity 1.15s var(--ease)}
+/* Outside: a quietly present threshold. Inside: one tall room with the actual same sea behind the open glass. */
+.architecture .out-frame{position:absolute;inset:0;border:solid rgba(27,40,50,.18);border-width:clamp(9px,1.8vw,28px) clamp(10px,2.5vw,40px) clamp(18px,3.7vh,40px);box-shadow:inset 0 20px 42px rgba(4,15,25,.15);opacity:.55;transition:opacity 1s}
+.architecture .out-sill{position:absolute;left:0;right:0;bottom:0;height:13%;background:linear-gradient(180deg,transparent,rgba(18,36,43,.25) 44%,rgba(10,22,29,.48))}
+.indoor{position:absolute;inset:0;opacity:0;transform:scale(1.06) translateX(3%);transform-origin:72% 54%;transition:opacity 1s var(--ease),transform 1.6s var(--ease)}
+/* Large monolithic walls frame a 46% wide ocean aperture; the ceiling reads as several storeys high. */
+.wall-left{position:absolute;inset:0;background:linear-gradient(104deg,#d4d3c9 0%,#f2eee4 32%,#d2d0c5 63%,#c7c6bd 100%);clip-path:polygon(0 0,51% 0,43% 82%,0 100%);filter:drop-shadow(12px 0 20px rgba(16,33,41,.18))}
+.wall-right{position:absolute;inset:0;background:linear-gradient(90deg,#a7a9a4 0%,#e1dfd5 55%,#c7c5bd);clip-path:polygon(86% 0,100% 0,100% 100%,89% 82%,85% 16%);box-shadow:inset 12px 0 25px rgba(37,48,51,.25)}
+.ceiling{position:absolute;top:0;left:0;width:100%;height:34%;background:linear-gradient(173deg,#e8e6dd,#c2c1b9 68%,#777f7d);clip-path:polygon(0 0,100% 0,87% 16%,44% 16%,0 34%);filter:drop-shadow(0 9px 24px rgba(16,31,37,.2))}
+.ceiling-slit{position:absolute;top:13.8%;left:44%;width:43%;height:1.5%;background:linear-gradient(90deg,#b5ac99,rgba(255,237,211,.95),#d5d2c7);transform:skewY(-.5deg);box-shadow:0 0 28px 9px var(--room-light)}
+.window-edge{position:absolute;left:43.8%;top:15%;width:43%;height:68%;border-left:3px solid rgba(35,47,48,.38);border-right:5px solid rgba(50,59,59,.45);box-shadow:inset 0 0 38px rgba(12,24,32,.16),0 0 32px rgba(40,52,57,.15);transform:skewX(-3deg)}
+.window-edge:before{content:"";position:absolute;inset:62% 0 auto;height:2px;background:rgba(193,204,203,.18)}
+.floor{position:absolute;left:0;right:0;bottom:0;height:30%;background:repeating-linear-gradient(168deg,transparent 0 84px,rgba(83,92,89,.11) 85px,transparent 87px),linear-gradient(180deg,#bbbcb4,#e8e7dc 58%,#c7c7bd);clip-path:polygon(0 70%,43% 29%,89% 29%,100% 65%,100% 100%,0 100%);box-shadow:0 -9px 30px rgba(22,43,47,.25)}
+.floor-joint{position:absolute;bottom:15%;left:5%;width:95%;height:1px;background:rgba(81,90,90,.17);transform:rotate(-9deg)}
+.light-shaft{position:absolute;inset:0;background:linear-gradient(104deg,rgba(255,244,218,.25),var(--room-light) 45%,transparent 74%);clip-path:polygon(57% 16%,74% 16%,43% 100%,4% 100%);mix-blend-mode:screen}
+body[data-light="night"] .light-shaft{opacity:.22}
+.pier{position:absolute;left:41.9%;top:10%;height:90%;width:2.1%;background:linear-gradient(90deg,#b2b3ac,#eeeae1 56%,#959b99);transform:skewX(-5deg);box-shadow:13px 4px 25px rgba(41,50,51,.18)}
+.plinth{position:absolute;left:7%;bottom:15%;width:32%;height:2px;background:linear-gradient(90deg,transparent,#8f9793,transparent);opacity:.38}
+body[data-view="in"] .indoor{opacity:1;transform:none}
+body[data-view="in"] .out-frame,body[data-view="in"] .out-sill{opacity:0}
+body[data-light="night"] .wall-left{background:linear-gradient(110deg,#475762,#80929a 38%,#54646d 77%,#344a54)}
+body[data-light="night"] .wall-right{background:linear-gradient(100deg,#283d48,#647a80 65%,#32444e)}
+body[data-light="night"] .ceiling{background:linear-gradient(165deg,#596b72,#313f4b 73%,#1e3644)}
+body[data-light="night"] .floor{background:repeating-linear-gradient(168deg,transparent 0 84px,rgba(185,207,208,.055) 85px,transparent 87px),linear-gradient(180deg,#46565d,#728186 58%,#344651)}
+body[data-light="night"] .pier{background:linear-gradient(90deg,#3a4f56,#829093 58%,#2c3d43)}
+body[data-light="night"] .ceiling-slit{background:rgba(181,204,209,.64);box-shadow:0 0 33px 8px rgba(123,176,190,.13)}
+.shell{position:relative;z-index:3;width:min(100%,1700px);min-height:100svh;margin:auto;padding:clamp(23px,3.2vw,55px) clamp(24px,5.5vw,99px) clamp(18px,3vw,39px);display:flex;flex-direction:column}
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:22px}
+.identity{display:inline-flex;gap:15px;align-items:center;text-decoration:none;color:inherit;min-height:43px}
+.monogram{font:400 36px/1 Georgia,serif;letter-spacing:-.12em}
+.identity-bar{width:1px;height:28px;background:currentColor;opacity:.42;transform:rotate(16deg)}
+.identity-name{display:flex;flex-direction:column;font-size:10px;letter-spacing:.29em;font-weight:600;line-height:1.9}
+.identity-name small{font-size:9px;opacity:.7;letter-spacing:.13em;font-weight:400}
+.top-controls{display:flex;align-items:center;gap:19px}
+.time-note{font:500 11px/1.5 ui-monospace,SFMono-Regular,monospace;letter-spacing:.09em;opacity:.8;white-space:nowrap}
+.light-choice{display:flex;gap:4px;padding:4px;border:1px solid var(--rule);background:rgba(24,43,53,.16);border-radius:32px;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+.light-choice button{border:0;background:transparent;color:var(--secondary);border-radius:20px;padding:7px 13px;white-space:nowrap;font-size:11px}
+.light-choice button[aria-pressed="true"]{background:rgba(249,252,240,.17);color:var(--ink)}
+.ambient-note{font-size:9px;letter-spacing:.15em;opacity:.68;text-align:right;margin-top:9px}
+.intro{flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:clamp(54px,8vh,140px) 0 clamp(18px,3vw,48px) clamp(0px,4vw,72px);max-width:min(63vw,720px)}
+.eyebrow{display:flex;align-items:center;gap:14px;font-size:10px;letter-spacing:.24em;color:var(--secondary)}
+.eyebrow:before{content:"";width:29px;height:1px;background:currentColor}
+.headline{font:300 clamp(54px,6.45vw,107px)/1.27 "Songti SC","STSong","Noto Serif CJK SC",serif;letter-spacing:.045em;margin:22px 0 20px;text-shadow:0 4px 40px rgba(9,26,31,.13);min-height:2.6em}
+.headline span{opacity:.74}
+.tagline{font-size:13px;letter-spacing:.12em;color:var(--secondary);margin:0 0 38px 3px}
+.moment{display:flex;align-items:baseline;gap:19px}
+.clock{font:300 clamp(58px,6.65vw,109px)/1 -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:-.08em;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";white-space:nowrap}
+.clock small{font:400 10px/1.7 ui-monospace,monospace;letter-spacing:.15em;opacity:.6;display:block;margin:8px 0 0 5px}
+.date-side{font-size:11px;letter-spacing:.08em;line-height:2.1;opacity:.75;white-space:nowrap}
+.turn-row{display:flex;align-items:center;gap:25px;margin-top:clamp(30px,5.6vh,68px)}
+.turn{background:rgba(247,249,239,.11);border:1px solid rgba(239,248,235,.42);color:inherit;backdrop-filter:blur(13px);-webkit-backdrop-filter:blur(13px);border-radius:100px;display:inline-flex;align-items:center;gap:16px;padding:13px 20px 13px 15px;font-size:12px;letter-spacing:.09em;transition:background .2s ease,transform .3s var(--ease)}
+.turn:hover{background:rgba(242,251,243,.18);transform:translateX(3px)}
+.turn-icon{font-size:20px;line-height:1;font-weight:200}
+.turn-hint{font-size:10px;letter-spacing:.12em;opacity:.65}
+.inside-label{position:absolute;right:15%;top:33%;font-size:10px;letter-spacing:.32em;writing-mode:vertical-rl;opacity:0;transition:opacity .7s}
+body[data-view="in"] .inside-label{opacity:.6}
+.base{position:relative;z-index:4;margin-top:auto;padding:23px clamp(0px,4vw,72px) 0}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:20px;font-size:10px;letter-spacing:.17em;color:var(--secondary);margin-bottom:22px}
+.section-head .dash{flex:1;height:1px;background:var(--rule);opacity:.7}
+.open-memory{border:0;background:none;color:inherit;font-size:11px;white-space:nowrap;padding:5px 0 5px 12px}
+.open-memory:hover{text-decoration:underline;text-underline-offset:6px}
+.axis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));position:relative;border-top:1px solid var(--rule);padding-top:25px;--marker:50%}
+.axis:before{content:"";position:absolute;top:-1px;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(254,255,240,.3),transparent)}
+.axis-marker{position:absolute;top:-5px;left:var(--marker);height:9px;width:9px;border-radius:50%;transform:translateX(-50%);background:#eef7ec;box-shadow:0 0 0 5px rgba(236,255,241,.12),0 0 27px rgba(246,255,239,.55);transition:left .8s var(--ease)}
+.day{display:flex;flex-direction:column;align-items:flex-start;gap:6px;border:0;background:none;text-align:left;padding:0 8px 9px 0;color:var(--secondary);opacity:.65;min-width:0}
+.day:nth-last-child(2){align-items:center;text-align:center}
+.day:last-child{align-items:flex-end;text-align:right}
+.day[aria-pressed="true"]{opacity:1;color:var(--ink)}
+.day:hover{opacity:1}
+.day small{font-size:9px;letter-spacing:.2em}
+.day b{font-weight:400;font-size:14px;letter-spacing:.2em}
+.day time{font:400 10px/1.3 ui-monospace,monospace;letter-spacing:.1em}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:14px;margin-top:15px;border-top:1px solid var(--rule);padding-top:16px;font-size:10px;letter-spacing:.12em;color:var(--secondary)}
+.foot strong{font-weight:400;color:var(--ink)}
+.motion-toggle{color:inherit;background:none;border:0;font-size:10px;padding:5px 0;letter-spacing:.08em}
+body[data-view="in"]{--ink:#263b43;--secondary:rgba(40,59,66,.69);--rule:rgba(44,66,65,.3)}
+body[data-view="in"] .shell{color:var(--ink)}
+body[data-view="in"] .turn{background:rgba(245,247,240,.53);border-color:rgba(52,69,72,.26)}
+body[data-view="in"] .light-choice{background:rgba(241,239,230,.55)}
+body[data-view="in"] .light-choice button[aria-pressed="true"]{background:rgba(44,72,76,.1)}
+body[data-view="in"] .intro{max-width:45%;padding-left:0;padding-top:10vh}
+body[data-view="in"] .headline{font-size:clamp(50px,5.4vw,82px)}
+body[data-view="in"] .tagline{max-width:310px}
+body[data-view="in"] .axis-marker{background:#59777b;box-shadow:0 0 0 5px rgba(72,97,99,.11),0 0 18px rgba(72,97,99,.23)}
+body[data-view="in"][data-light="night"]{--ink:#e4efed;--secondary:rgba(222,238,237,.75);--rule:rgba(231,248,244,.28)}
+body[data-view="in"][data-light="night"] .light-choice{background:rgba(26,47,56,.33)}
+body[data-view="in"][data-light="night"] .turn{background:rgba(9,33,44,.2);border-color:rgba(239,248,244,.3)}
+/* Day Memory is a quiet side room, entered only on demand. */
+.scrim{position:fixed;inset:0;z-index:10;background:rgba(11,26,32,.48);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
+.memory-sheet{position:fixed;z-index:11;right:0;top:0;bottom:0;width:min(100%,520px);overflow-y:auto;overscroll-behavior:contain;background:#f4f1e9;color:#263e46;box-shadow:-15px 0 90px rgba(5,21,30,.25);padding:clamp(28px,5vh,63px) clamp(24px,4vw,52px);transform:translateX(103%);visibility:hidden;transition:transform .65s var(--ease),visibility .65s}
+body[data-memory="open"] .scrim{opacity:1;visibility:visible}
+body[data-memory="open"] .memory-sheet{transform:translateX(0);visibility:visible}
+.sheet-top{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.25em;color:#61787b}
+.sheet-close{background:transparent;border:1px solid rgba(57,76,79,.35);color:#263e46;border-radius:50%;width:40px;height:40px;font-size:22px;line-height:1}
+.sheet-kicker{font-size:11px;letter-spacing:.22em;color:#77898a;margin:70px 0 11px}
+.sheet-title{font:400 clamp(48px,5vw,67px)/1.2 "Songti SC","STSong",serif;margin:0 0 9px}
+.sheet-date{font:400 12px/1.6 ui-monospace,monospace;letter-spacing:.16em;color:#648084;margin:0 0 44px}
+.sheet-rule{height:1px;background:rgba(45,78,80,.2);margin:20px 0 27px}
+.category{border:0;background:transparent;color:#567074;font-size:10px;letter-spacing:.14em;padding:11px 0;margin-right:20px;border-bottom:2px solid transparent}
+.category[aria-selected="true"]{color:#203e47;border-bottom-color:#52787c}
+.entry{margin-top:35px}
+.entry small{font-size:10px;letter-spacing:.18em;color:#7c9092}
+.entry h3{font-size:24px;font-weight:400;letter-spacing:.03em;margin:14px 0}
+.entry p{color:#5a7276;font-size:13px;line-height:2.1;letter-spacing:.035em}
+.entry-expand{border:1px solid rgba(40,74,77,.25);background:transparent;color:#345860;border-radius:30px;padding:11px 18px;margin:17px 0;font-size:12px}
+.entry-detail{border-top:1px solid rgba(38,75,79,.18);margin-top:14px;padding-top:15px;font-size:13px;line-height:2;color:#425f64}
+.entry-detail[hidden]{display:none}
+.sheet-bottom{margin-top:48px;font-size:10px;letter-spacing:.15em;color:#82999a}
+@media(max-width:900px){
+ .time-note{display:none}
+ .intro{max-width:71vw}
+ body[data-view="in"] .intro{max-width:43%}
+ body[data-view="in"] .headline{font-size:clamp(42px,6vw,72px)}
+ .turn-hint{display:none}
+}
+@media(max-width:700px){
+ .shell{padding:21px 19px 20px;min-height:100svh}
+ .monogram{font-size:30px}.identity{gap:10px}.identity-bar{height:23px}.identity-name{font-size:9px}.identity-name small{display:none}
+ .top-controls{gap:7px}.light-choice{padding:3px}.light-choice button{font-size:10px;padding:7px 10px}
+ .ambient-note{display:none}
+ .intro{padding:10vh 4px 30px;max-width:100%;justify-content:center}
+ .headline{font-size:clamp(43px,10.1vw,67px);min-height:2.55em;margin:16px 0}
+ .tagline{font-size:11px;margin-bottom:24px}
+ .eyebrow{font-size:9px}
+ .clock{font-size:clamp(57px,13.5vw,84px)}
+ .date-side{font-size:10px}
+ .turn-row{margin-top:24px}
+ .turn{font-size:11px;padding:10px 15px 10px 13px;gap:10px}
+ .base{padding:14px 0 0}
+ .section-head{margin-bottom:16px;gap:8px;font-size:9px}
+ .axis{padding-top:19px}
+ .day b{font-size:12px}.day small{font-size:8px}.day time{font-size:9px}
+ .foot{font-size:9px;margin-top:8px;padding-top:10px}
+ .sea,#sea-canvas{top:56%}.horizon{top:56%}#sea-canvas{height:44%}
+ .sun{left:68%;top:40%;width:54vw;height:54vw}
+ /* On a phone, the room becomes a tall daylight volume above a human-scale reading wall. */
+ body[data-view="in"] .intro{max-width:100%;margin-top:29vh;padding:2vh 8px 20px;justify-content:flex-start}
+ body[data-view="in"] .headline{font-size:clamp(43px,10.1vw,67px)}
+ body[data-view="in"] .wall-left{clip-path:polygon(0 0,19% 0,15% 48%,0 65%)}
+ body[data-view="in"] .wall-right{clip-path:polygon(86% 0,100% 0,100% 66%,90% 55%,84% 10%)}
+ body[data-view="in"] .ceiling{height:30%;clip-path:polygon(0 0,100% 0,85% 10%,17% 10%,0 26%)}
+ body[data-view="in"] .ceiling-slit{left:17%;width:68%;top:9.5%}
+ body[data-view="in"] .window-edge{left:15%;top:10%;width:74%;height:45%}
+ body[data-view="in"] .pier{left:12%;top:9%;height:47%;width:3.5%}
+ body[data-view="in"] .floor{height:15%;clip-path:polygon(0 15%,12% 0,91% 0,100% 18%,100% 100%,0 100%)}
+ body[data-view="in"] .light-shaft{clip-path:polygon(44% 10%,76% 10%,96% 67%,10% 67%)}
+ body[data-view="in"] .inside-label{display:none}
+ body[data-view="in"] .shell:before{content:"";position:absolute;z-index:-1;left:0;right:0;top:38%;bottom:0;background:linear-gradient(180deg,rgba(239,238,232,0) 0%,#efeee8 15%,#e9e7df 100%);box-shadow:none}
+ body[data-view="in"][data-light="night"] .shell:before{background:linear-gradient(180deg,rgba(70,90,99,0) 0%,#465a63 15%,#374a54 100%)}
+ body[data-view="in"] .eyebrow{color:var(--secondary)}
+}
+@media(max-width:380px){
+ .shell{padding:18px 16px 14px}
+ .identity-name{letter-spacing:.12em}
+ .light-choice button{padding:6px 8px;font-size:9px}
+ .headline{font-size:43px}
+ .clock{font-size:57px}.date-side{font-size:9px}
+ .section-head{font-size:8px}.open-memory{font-size:10px}
+ .day b{font-size:11px}
+}
+/* Fit the whole three-day axis above the fold on ordinary desktop screens. */
+@media(min-width:701px) and (max-height:950px){
+ .shell{padding-top:26px;padding-bottom:17px}
+ .intro{padding-top:25px;padding-bottom:8px}
+ .headline{min-height:0;font-size:clamp(51px,6vw,90px);margin:13px 0 10px}
+ .tagline{margin-bottom:21px}
+ .clock{font-size:clamp(58px,6vw,85px)}
+ .turn-row{margin-top:25px}
+ .base{padding-top:9px}
+ .section-head{margin-bottom:12px}
+ .axis{padding-top:18px}
+ .foot{margin-top:8px;padding-top:9px}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body data-view="out" data-light="dawn" data-memory="closed">
+<div id="scene" aria-hidden="true">
+ <div class="sky"></div><div class="ambient-bloom"></div><div class="sun"></div><div class="sea"></div><div class="horizon"></div><canvas id="sea-canvas"></canvas><div class="air"></div><div class="noise"></div>
+</div>
+<div class="architecture" aria-hidden="true">
+ <div class="out-frame"></div><div class="out-sill"></div>
+ <div class="indoor"><div class="wall-left"></div><div class="wall-right"></div><div class="ceiling"></div><div class="ceiling-slit"></div><div class="window-edge"></div><div class="floor"></div><div class="floor-joint"></div><div class="light-shaft"></div><div class="pier"></div><div class="plinth"></div></div>
+</div>
+<main class="shell" id="app">
+ <header class="head">
+  <a href="#" class="identity" id="home" aria-label="回到今天和窗前"><span class="monogram">MO.</span><span class="identity-bar"></span><span class="identity-name">CONTROL<small>OUR SHARED PLACE</small></span></a>
+  <div class="top-controls"><div><div class="time-note" id="small-clock">LOCAL / --:--</div><div class="ambient-note">LIGHT STUDY · 01</div></div>
+   <nav class="light-choice" aria-label="光线预览"><button type="button" data-light-set="auto" aria-pressed="false">此刻</button><button type="button" data-light-set="dawn" aria-pressed="true">晨光</button><button type="button" data-light-set="night" aria-pressed="false">夜色</button></nav>
+  </div>
+ </header>
+ <section class="intro" aria-label="Time 前厅">
+  <div class="eyebrow" id="zone-label">01 / TIME · THE THRESHOLD</div>
+  <h1 class="headline" id="headline">让时间，<br><span>有一个去处。</span></h1>
+  <p class="tagline" id="tagline">海天之间，一切从此刻开始。</p>
+  <div class="moment"><div class="clock" aria-live="off"><span id="clock">--:--</span><small id="clock-context">LOCAL TIME · PRESENT</small></div><div class="date-side" id="date-side">星期四<br>十月十五日</div></div>
+  <div class="turn-row"><button type="button" class="turn" id="scene-switch" aria-label="转身，走进室内"><span class="turn-icon" aria-hidden="true">↗</span><span id="turn-label">转身，走进室内</span></button><span class="turn-hint" id="turn-hint">同一片天空 · 同一束光</span></div>
+ </section>
+ <div class="inside-label" aria-hidden="true">ARCHITECTURE / 01 · SILENCE & LIGHT</div>
+ <section class="base" aria-label="时间与记忆">
+  <div class="section-head"><span>TIME · THREE DAYS</span><span class="dash" aria-hidden="true"></span><button type="button" class="open-memory" id="open-memory">走进这一天 ↗</button></div>
+  <nav class="axis" id="time-axis" aria-label="昨天今天明天" style="--marker:50%">
+   <span class="axis-marker" aria-hidden="true"></span>
+   <button class="day" type="button" data-day="-1" aria-pressed="false"><small>01 / BEFORE</small><b>昨天</b><time id="yesterday">-- / --</time></button>
+   <button class="day" type="button" data-day="0" aria-pressed="true"><small>02 / NOW</small><b>今天</b><time id="today">-- / --</time></button>
+   <button class="day" type="button" data-day="1" aria-pressed="false"><small>03 / NEXT</small><b>明天</b><time id="tomorrow">-- / --</time></button>
+  </nav>
+  <footer class="foot"><span id="day-thought">今天的故事，正在发生。</span><div><button class="motion-toggle" id="motion-toggle" type="button" aria-pressed="false">水面流动 · 关</button></div></footer>
+ </section>
+</main>
+<div class="scrim" id="scrim" aria-hidden="true"></div>
+<aside class="memory-sheet" id="memory-sheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sheet-title">
+ <div class="sheet-top"><span>MO / TIME / MEMORY</span><button class="sheet-close" type="button" id="close-memory" aria-label="关闭记忆，返回前厅">×</button></div>
+ <p class="sheet-kicker">DAY MEMORY / A SINGLE DAY</p>
+ <h2 class="sheet-title" id="sheet-title">今天</h2><p class="sheet-date" id="sheet-date">2026 / 10 / 15</p>
+ <p style="font-size:13px;line-height:2;color:#5b7476">走进一天，所有片段都在自己的位置。<br>下面为交互验证使用的示例记录。</p>
+ <div class="sheet-rule"></div>
+ <div role="tablist" aria-label="记录分类"><button type="button" class="category" role="tab" data-cat="life" aria-selected="true">LIFE</button><button type="button" class="category" role="tab" data-cat="study" aria-selected="false">STUDY</button><button type="button" class="category" role="tab" data-cat="work" aria-selected="false">WORK</button><button type="button" class="category" role="tab" data-cat="observation" aria-selected="false">OBSERVE</button></div>
+ <article class="entry" id="memory-entry"><small id="entry-code">01 / LIFE</small><h3 id="entry-title">清晨的片刻</h3><p id="entry-text">窗外的海面还很安静。光沿着建筑边缘，慢慢抵达室内。</p><button type="button" class="entry-expand" id="expand-entry" aria-expanded="false">展开这条记录 ↗</button><div class="entry-detail" id="entry-detail" hidden>这里保存那一天的具体片段。此处为模拟内容，实际数据尚未接入。</div></article>
+ <div class="sheet-bottom">SPATIAL / 01 — INTERACTION PROTOTYPE</div>
+</aside>
+<script>
+(()=>{
+'use strict';
+const doc=document,body=doc.body,$=(s)=>doc.querySelector(s),$$=(s)=>[...doc.querySelectorAll(s)];
+const now=()=>new Date(), state={view:'out',light:'dawn',choice:'dawn',day:0,motion:false,cat:'life',memory:false};
+const fixed=(n)=>String(n).padStart(2,'0');
+const shifted=(offset)=>{const d=now();d.setDate(d.getDate()+offset);return d;};
+const formatDate=(d)=>d.getFullYear()+' / '+fixed(d.getMonth()+1)+' / '+fixed(d.getDate());
+const shortDate=(d)=>fixed(d.getMonth()+1)+' / '+fixed(d.getDate());
+const memoryData={
+ life:['01 / LIFE','清晨的片刻','窗外的海面还很安静。光沿着建筑边缘，慢慢抵达室内。','一段普通的生活记录。这里以后可以呈现照片、地点、心情与当天的真实记忆。'],
+ study:['02 / STUDY','读到的一句话','读到的东西不必立刻整理成结论。它可以先在这里停留。','此处展示学习摘录的展开形式：来源、原文、思考与下一次继续的位置。'],
+ work:['03 / WORK','今天推进的一小步','一件事情，有目标、有证据，也有准确的下一步。','未来可以连接真实任务状态、执行记录与成果；此版本没有连接任何工作数据。'],
+ observation:['04 / OBSERVE','光如何进入空间','在室外，光落在海面；转过身，同一束光划过室内的墙与地面。','这条是 Spatial-01 的模拟观察。用于验证空间体验与可展开的信息密度。']
+};
+function lightFromTime(){const h=now().getHours();return h>=6&&h<18?'dawn':'night';}
+function setLight(choice){state.choice=choice;state.light=choice==='auto'?lightFromTime():choice;body.dataset.light=state.light;$$('[data-light-set]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.lightSet===choice)));drawSea();}
+function setView(view){state.view=view;body.dataset.view=view;const inside=view==='in';$('#zone-label').textContent=inside?'02 / THE ATRIUM · INSIDE':'01 / TIME · THE THRESHOLD';$('#headline').innerHTML=inside?'给光，<br><span>留下空间。</span>':'让时间，<br><span>有一个去处。</span>';$('#tagline').textContent=inside?'抬头是建筑的高度，远处仍是同一片海。':'海天之间，一切从此刻开始。';$('#turn-label').textContent=inside?'转身，望向海面':'转身，走进室内';$('#scene-switch').setAttribute('aria-label',inside?'转身，望向海面':'转身，走进室内');$('#turn-hint').textContent=inside?'精密空间 · 自然光进入室内':'同一片天空 · 同一束光';}
+function selectDay(day){state.day=day;$$('[data-day]').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.day)===day)));$('#time-axis').style.setProperty('--marker',day===-1?'16.67%':day===0?'50%':'83.33%');$('#day-thought').textContent=day===-1?'昨天的片段，依然可以走进去。':day===0?'今天的故事，正在发生。':'明天，留给期待与计划。';$('#sheet-title').textContent=day===-1?'昨天':day===0?'今天':'明天';$('#sheet-date').textContent=formatDate(shifted(day));}
+function setCategory(cat){state.cat=cat;$$('[data-cat]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.cat===cat)));const [code,title,desc,detail]=memoryData[cat];$('#entry-code').textContent=code;$('#entry-title').textContent=title;$('#entry-text').textContent=desc;$('#entry-detail').textContent=detail;$('#entry-detail').hidden=true;$('#expand-entry').setAttribute('aria-expanded','false');$('#expand-entry').textContent='展开这条记录 ↗';}
+function showMemory(open){state.memory=open;body.dataset.memory=open?'open':'closed';$('#memory-sheet').setAttribute('aria-hidden',String(!open));if(open){setCategory(state.cat);$('#close-memory').focus();}else{$('#open-memory').focus();}}
+function updateClock(){const d=now();const f=fixed(d.getHours())+':'+fixed(d.getMinutes());$('#clock').textContent=f;$('#small-clock').textContent='LOCAL / '+f;$('#date-side').innerHTML=d.toLocaleDateString('zh-CN',{weekday:'long'})+'<br>'+d.toLocaleDateString('zh-CN',{month:'long',day:'numeric'});$('#yesterday').textContent=shortDate(shifted(-1));$('#today').textContent=shortDate(d);$('#tomorrow').textContent=shortDate(shifted(1));$('#sheet-date').textContent=formatDate(shifted(state.day));if(state.choice==='auto'){const v=lightFromTime();if(v!==state.light)setLight('auto');}}
+const canvas=$('#sea-canvas'),ctx=canvas.getContext('2d');let tick=0,lastW=0,lastH=0,request=0,lastFrame=0;
+function drawSea(){if(!ctx)return;const r=canvas.getBoundingClientRect(),scale=Math.min(window.devicePixelRatio||1,2);const w=Math.ceil(r.width*scale),h=Math.ceil(r.height*scale);if(w<1||h<1)return;if(w!==lastW||h!==lastH){canvas.width=w;canvas.height=h;lastW=w;lastH=h;}ctx.clearRect(0,0,w,h);const night=state.light==='night';const x0=w*.71;for(let i=0;i<92;i++){const depth=i/92,y=h*(.018+Math.pow(depth,1.34)*.96);const spread=(.025+depth*.52)*w;const lateral=Math.sin(i*15.713+(state.motion?tick*.16:0))*spread*.87;const len=(.015+depth*.062)*w*(.38+.62*Math.abs(Math.sin(i*4.397)));const a=(night?.038:.11)*(1-depth*.65);ctx.strokeStyle=night?'rgba(175,220,221,'+a+')':'rgba(255,241,207,'+a+')';ctx.lineWidth=Math.max(1,scale*(.48+depth*.7));ctx.beginPath();ctx.moveTo(x0+lateral-len/2,y);ctx.lineTo(x0+lateral+len/2,y);ctx.stroke();}if(state.motion){tick+=.6;}}
+function motionLoop(time){if(!state.motion)return;if(time-lastFrame>50){drawSea();lastFrame=time;}request=requestAnimationFrame(motionLoop);}
+function setMotion(on){state.motion=on;$('#motion-toggle').setAttribute('aria-pressed',String(on));$('#motion-toggle').textContent='水面流动 · '+(on?'开':'关');cancelAnimationFrame(request);if(on)request=requestAnimationFrame(motionLoop);else drawSea();}
+$('#scene-switch').addEventListener('click',()=>setView(state.view==='out'?'in':'out'));
+$$('[data-light-set]').forEach(b=>b.addEventListener('click',()=>setLight(b.dataset.lightSet)));
+$$('[data-day]').forEach(b=>b.addEventListener('click',()=>selectDay(Number(b.dataset.day))));
+$('#open-memory').addEventListener('click',()=>showMemory(true));$('#close-memory').addEventListener('click',()=>showMemory(false));$('#scrim').addEventListener('click',()=>showMemory(false));
+$$('[data-cat]').forEach(b=>b.addEventListener('click',()=>setCategory(b.dataset.cat)));
+$('#expand-entry').addEventListener('click',()=>{const open=$('#entry-detail').hidden;$('#entry-detail').hidden=!open;$('#expand-entry').setAttribute('aria-expanded',String(open));$('#expand-entry').textContent=open?'收起这条记录 ↑':'展开这条记录 ↗';});
+$('#home').addEventListener('click',e=>{e.preventDefault();showMemory(false);selectDay(0);setView('out');});
+$('#motion-toggle').addEventListener('click',()=>setMotion(!state.motion));
+doc.addEventListener('keydown',e=>{if(e.key==='Escape'&&state.memory)showMemory(false);});
+window.addEventListener('resize',drawSea);
+setLight('dawn');setView('out');selectDay(0);setCategory('life');updateClock();setInterval(updateClock,20000);
+})();
+</script>
+</body>
+</html>
